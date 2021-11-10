@@ -149,28 +149,32 @@ async def login(reader, writer):
         return False, username, password, "Incorrect username or password"
 
 
+def commands(writer, client):
+    display_data = """Welcome
+        How can I help you
+                create_folder <name>   -->  Create new folder <name>
+                write_file <name> <input>  -->  Write <input> into <name> or Create a new file <name>
+                read_file <name>   -->  Read data from the file <name> in the current working directory
+                list   -->  View list of folders and files
+                change_folder <name>   -->  Move the current working directory for the current user to the specified folder residing in the current folder
+                register <username> <password>   -->  Register a new user to the server using the <username> and <password> provided
+                login <username> <password>   -->  Log in the user conforming with <username> onto the server if the <password> provided matches the password used while registering
+                quit   -->  Logout
+        Please select the option  
+    Select (Current working directory: {}): """.format(client.current_folder)
+    writer.write(display_data.encode())
+
+
 async def menu(reader, writer, status, username, password, message="Error"):
     if status:
         client = Client(username)
-        display_data = """Welcome
-    How can I help you
-            create_folder <name>   -->  Create new folder <name>
-            write_file <name> <input>  -->  Write <input> into <name> or Create a new file <name>
-            read_file <name>   -->  Read data from the file <name> in the current working directory
-            list   -->  View list of folders and files
-            change_folder <name>   -->  Move the current working directory for the current user to the specified folder residing in the current folder
-            register <username> <password>   -->  Register a new user to the server using the <username> and <password> provided
-            login <username> <password>   -->  Log in the user conforming with <username> onto the server if the <password> provided matches the password used while registering
-            exit   -->  Logout
-    Please select the option  
-Select (Current working directory: {}): """.format(client.current_folder)
-        writer.write(display_data.encode())
+        commands(writer, client)
         while True:
             try:
                 data = await reader.read(1000)
                 if len(data) > 0:
                     choise = data.decode().strip().split(' ', 2)
-                    if "exit" in choise[0]:
+                    if "quit" in choise[0]:
                         await replace("UserList.txt", f'{username}:{password}:Online\n', f'{username}:{password}\n')
                         break
                     elif "create_folder" in choise[0]:
@@ -201,7 +205,9 @@ Select (Current working directory: {}): """.format(client.current_folder)
                                 client.read_file("".encode()),
                                 client.current_folder).encode())
                     elif "register" in choise[0]:
-                         register(reader, writer)
+                        register(reader, writer)
+                    elif "commands" in choise[0]:
+                        commands(writer, client)
                     else:
                         writer.write("\nSelect (Current working directory: {}): ".format(
                             client.current_folder
